@@ -1,0 +1,153 @@
+{
+  "info": {
+    "name": "Todo API",
+    "description": "ทดสอบ RESTful API สำหรับ Todo List (AdonisJS 5)\n\nรันตามลำดับด้วย Collection Runner: สร้าง → ดึงทั้งหมด → ดึงรายการเดียว → แก้ไข → เปลี่ยนสถานะ → ลบ → ตรวจว่าลบแล้ว",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3333/api" },
+    { "key": "todoId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Create Todo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('มี id และ title ถูกต้อง', () => {",
+              "  pm.expect(body.id).to.be.a('number');",
+              "  pm.expect(body.title).to.eql('ทดสอบจาก Postman');",
+              "  pm.expect(body.isCompleted).to.eql(false);",
+              "});",
+              "pm.collectionVariables.set('todoId', body.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"ทดสอบจาก Postman\"\n}" },
+        "url": "{{baseUrl}}/todos"
+      }
+    },
+    {
+      "name": "2. Get All Todos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const list = pm.response.json();",
+              "pm.test('ได้ array และมีรายการที่เพิ่งสร้าง', () => {",
+              "  pm.expect(list).to.be.an('array');",
+              "  pm.expect(list.some(t => t.id === Number(pm.collectionVariables.get('todoId')))).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "GET", "url": "{{baseUrl}}/todos" }
+    },
+    {
+      "name": "3. Get Todo by ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('id ตรงกัน', () => pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('todoId'))));"
+            ]
+          }
+        }
+      ],
+      "request": { "method": "GET", "url": "{{baseUrl}}/todos/{{todoId}}" }
+    },
+    {
+      "name": "4. Update Todo Title (PUT)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('title ถูกแก้ไข', () => pm.expect(pm.response.json().title).to.eql('แก้ไขชื่อแล้ว'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"แก้ไขชื่อแล้ว\"\n}" },
+        "url": "{{baseUrl}}/todos/{{todoId}}"
+      }
+    },
+    {
+      "name": "5. Mark as Completed (PATCH)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('isCompleted เป็น true', () => pm.expect(pm.response.json().isCompleted).to.eql(true));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"isCompleted\": true\n}" },
+        "url": "{{baseUrl}}/todos/{{todoId}}"
+      }
+    },
+    {
+      "name": "6. Create Todo - Validation Error",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 422 เมื่อไม่ส่ง title', () => pm.response.to.have.status(422));",
+              "pm.test('มีข้อความ error', () => pm.expect(pm.response.json().errors).to.be.an('array').that.is.not.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"   \"\n}" },
+        "url": "{{baseUrl}}/todos"
+      }
+    },
+    {
+      "name": "7. Delete Todo",
+      "event": [
+        {
+          "listen": "test",
+          "script": { "exec": ["pm.test('Status 204 No Content', () => pm.response.to.have.status(204));"] }
+        }
+      ],
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/todos/{{todoId}}" }
+    },
+    {
+      "name": "8. Get Deleted Todo - 404",
+      "event": [
+        {
+          "listen": "test",
+          "script": { "exec": ["pm.test('Status 404 หลังลบแล้ว', () => pm.response.to.have.status(404));"] }
+        }
+      ],
+      "request": { "method": "GET", "url": "{{baseUrl}}/todos/{{todoId}}" }
+    }
+  ]
+}
